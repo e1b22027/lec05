@@ -20,6 +20,27 @@ public class Sample3AuthConfiguration {
    * @return
    * @throws Exception
    */
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http.formLogin(login -> login
+        .permitAll())
+        .logout(logout -> logout
+            .logoutUrl("/logout")
+            .logoutSuccessUrl("/")) // ログアウト後に / にリダイレクト
+        .authorizeHttpRequests(authz -> authz
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/sample5/**"))
+            .authenticated() // /sample4/以下は認証済みであること
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/sample58*"))
+            .authenticated() // /sample4/以下は認証済みであること
+            .requestMatchers(AntPathRequestMatcher.antMatcher("/**"))
+            .permitAll())// 上記以外は全員アクセス可能
+        .csrf(csrf -> csrf
+            .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/h2-console/*")))// h2-console用にCSRF対策を無効化
+        .headers(headers -> headers
+            .frameOptions(frameOptions -> frameOptions
+                .sameOrigin()));
+    return http.build();
+  }
 
   /**
    * 認証処理に関する設定（誰がどのようなロールでログインできるか）
@@ -28,7 +49,6 @@ public class Sample3AuthConfiguration {
    */
   @Bean
   public InMemoryUserDetailsManager userDetailsService() {
-
 
     UserDetails customer1 = User.withUsername("customer1")
         .password("{bcrypt}$2y$05$hQz59KuMIFZ6n8iIhG8Zo.xv29GbxNnB2XTjw4axe0lPVjVPokDh2").roles("CUSTOMER").build();
